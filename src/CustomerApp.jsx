@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   supabase,
   getCustomerByPhone,
@@ -84,26 +84,44 @@ const styles = `
   .welcome-btns { width: 100%; max-width: 360px; }
 `;
 
-// ─── QR CODE ─────────────────────────────────────────────────────────────────
-function QRCode({ value, size = 180 }) {
-  const hash = [...value].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 0);
-  const cells = 21;
-  const grid = Array.from({ length: cells }, (_, r) =>
-    Array.from({ length: cells }, (_, c) => {
-      if (r < 7 && c < 7) return (r===0||r===6||c===0||c===6||(r>=2&&r<=4&&c>=2&&c<=4));
-      if (r < 7 && c >= cells-7) return (r===0||r===6||c===cells-7||c===cells-1||(r>=2&&r<=4&&c>=cells-5&&c<=cells-3));
-      if (r >= cells-7 && c < 7) return (r===cells-7||r===cells-1||c===0||c===6||(r>=cells-5&&r<=cells-3&&c>=2&&c<=4));
-      return ((hash ^ (r*17+c*31)) & 1) === 1;
-    })
-  );
+// ─── REAL QR CODE (using qrcode.react pattern with canvas) ──────────────────
+function QRCode({ value, size = 200 }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current || !value) return;
+    // Dynamically load QRCode library
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    script.onload = () => {
+      canvasRef.current.innerHTML = '';
+      new window.QRCode(canvasRef.current, {
+        text: value,
+        width: size,
+        height: size,
+        colorDark: "#111111",
+        colorLight: "#ffffff",
+        correctLevel: window.QRCode.CorrectLevel.H,
+      });
+    };
+    if (window.QRCode) {
+      canvasRef.current.innerHTML = '';
+      new window.QRCode(canvasRef.current, {
+        text: value,
+        width: size,
+        height: size,
+        colorDark: "#111111",
+        colorLight: "#ffffff",
+        correctLevel: window.QRCode.CorrectLevel.H,
+      });
+    } else {
+      document.head.appendChild(script);
+    }
+  }, [value, size]);
+
   return (
-    <div className="qr-container" style={{ width:size+32, height:size+32 }}>
-      <svg width={size} height={size} viewBox={`0 0 ${cells} ${cells}`} style={{ display:"block", imageRendering:"pixelated" }}>
-        {grid.map((row, r) => row.map((filled, c) => filled
-          ? <rect key={`${r}-${c}`} x={c} y={r} width={1} height={1} fill="#111"/>
-          : null
-        ))}
-      </svg>
+    <div style={{ background:"white", borderRadius:16, padding:16, display:"inline-block" }}>
+      <div ref={canvasRef} style={{ width:size, height:size }}/>
     </div>
   );
 }
@@ -407,12 +425,16 @@ export default function CustomerApp() {
               My Loyalty QR
             </div>
             <div style={{ fontSize:18, fontWeight:700, marginBottom:18 }}>{me.name}</div>
+
+            {/* REAL QR CODE */}
             <div style={{ display:"flex", justifyContent:"center", marginBottom:16 }}>
-              <QRCode value={me.id + me.phone} size={180}/>
+              <QRCode value={me.id} size={200}/>
             </div>
-            <div style={{ fontFamily:"JetBrains Mono,monospace", fontSize:13, color:"var(--muted)", letterSpacing:3 }}>
+
+            <div style={{ fontFamily:"JetBrains Mono,monospace", fontSize:12, color:"var(--muted)", letterSpacing:2, marginBottom:4 }}>
               {me.id}
             </div>
+            <div style={{ fontSize:11, color:"var(--muted)" }}>{me.phone}</div>
           </div>
 
           <div className="card" style={{ marginBottom:12 }}>
@@ -430,7 +452,10 @@ export default function CustomerApp() {
             </div>
             <div className="info-row">
               <span className="info-key">Milestone</span>
-              <span className="info-val">{me.milestone_awarded ? <span style={{ color:"#6ecf80" }}>✓ Awarded</span> : `${milePct.toFixed(0)}% to RM750`}</span>
+              <span className="info-val">{me.milestone_awarded
+                ? <span style={{ color:"#6ecf80" }}>✓ Awarded</span>
+                : `${milePct.toFixed(0)}% to RM750`}
+              </span>
             </div>
           </div>
 
