@@ -434,7 +434,7 @@ export default function CustomerApp() {
             </div>
           </div>
 
-          <div style={{ background:"var(--ash)", border:"1px solid var(--line)", borderRadius:var(--r), padding:"14px 16px", fontSize:13, color:"var(--muted)", lineHeight:1.8 }}>
+          <div style={{ background:"var(--ash)", border:"1px solid var(--line)", borderRadius:12, padding:"14px 16px", fontSize:13, color:"var(--muted)", lineHeight:1.8 }}>
             📲 Show this QR to staff to earn or redeem points.<br/>
             Works at <strong style={{ color:"var(--cream)" }}>DAORAE@SS2</strong> and <strong style={{ color:"var(--cream)" }}>JOJO SIKDANG</strong>.
           </div>
