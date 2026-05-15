@@ -225,6 +225,42 @@ export default function CustomerApp() {
   const [regName, setRegName]   = useState("");
   const [regPhone, setRegPhone] = useState("");
   const [loginPhone, setLoginPhone] = useState("");
+  const [isChecking, setIsChecking] = useState(true); // prevent flash
+
+  // Auto-login on app open
+  useEffect(() => {
+    const saved = localStorage.getItem("mugjar_customer_id");
+    if (!saved) {
+      setIsChecking(false);
+      return;
+    }
+    supabase.from("customers").select("*").eq("id", saved).single()
+      .then(({ data }) => {
+        if (data) {
+          setMe(data);
+          getCustomerTransactions(data.id).then(setMyTx);
+          setScreen("app");
+        } else {
+          localStorage.removeItem("mugjar_customer_id");
+        }
+        setIsChecking(false);
+      })
+      .catch(() => {
+        localStorage.removeItem("mugjar_customer_id");
+        setIsChecking(false);
+      });
+  }, []);
+
+  // Show blank loading screen while checking saved session
+  if (isChecking) return (
+    <div style={{ minHeight: "100vh", background: "#0f0d0b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <style>{styles}</style>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔥</div>
+        <div className="spinner" style={{ margin: "0 auto" }} />
+      </div>
+    </div>
+  );
 
   const showToast = (msg, type = "success") => setToast({ msg, type });
 
@@ -243,6 +279,7 @@ export default function CustomerApp() {
       const c = await createCustomer({ name: regName.trim(), phone: regPhone.trim() });
       setMe(c);
       await refreshMe(c.id);
+      localStorage.setItem("mugjar_customer_id", c.id);
       setScreen("app");
       showToast("Welcome! 20 bonus points credited! 🎉");
     } catch (e) {
@@ -255,7 +292,12 @@ export default function CustomerApp() {
     if (!loginPhone.trim()) return showToast("Please enter your phone number", "error");
     setLoading(true);
     const c = await getCustomerByPhone(loginPhone.trim());
-    if (c) { setMe(c); await refreshMe(c.id); setScreen("app"); }
+    if (c) {
+      setMe(c);
+      await refreshMe(c.id);
+      localStorage.setItem("mugjar_customer_id", c.id);
+      setScreen("app");
+    }
     else showToast("Phone number not found. Please register first.", "error");
     setLoading(false);
   };
@@ -436,7 +478,7 @@ export default function CustomerApp() {
             </div>
           </div>
 
-          <button className="btn btn-ghost" style={{ width: "100%", marginTop: 4, color: "var(--muted)", fontSize: 12 }} onClick={() => { setMe(null); setScreen("welcome"); }}>Sign Out</button>
+          <button className="btn btn-ghost" style={{ width: "100%", marginTop: 4, color: "var(--muted)", fontSize: 12 }} onClick={() => { localStorage.removeItem("mugjar_customer_id"); setMe(null); setScreen("welcome"); }}>Sign Out</button>
           {selOutlet && <OutletModal outlet={selOutlet} onClose={() => setSelOutlet(null)} />}
         </div>
       )}
