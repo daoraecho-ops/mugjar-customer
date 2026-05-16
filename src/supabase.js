@@ -102,27 +102,70 @@ export async function getCustomerTransactions(customerId) {
 }
 
 // EARN POINTS
+// ─── TIER SYSTEM ─────────────────────────────────────────────────────────────
+export const TIERS = [
+  { name: 'Bronze',   icon: '🥉', min: 0,     max: 750,   rate: 0.05, bonus: 0,    color: '#cd7f32' },
+  { name: 'Silver',   icon: '🥈', min: 751,   max: 2000,  rate: 0.06, bonus: 300,  color: '#a8a9ad' },
+  { name: 'Gold',     icon: '🥇', min: 2001,  max: 4500,  rate: 0.07, bonus: 500,  color: '#d4a44c' },
+  { name: 'Platinum', icon: '💎', min: 4501,  max: 7499,  rate: 0.075,bonus: 800,  color: '#e5e4e2' },
+  { name: 'Diamond',  icon: '👑', min: 7500,  max: Infinity, rate: 0.08, bonus: 1500, color: '#b9f2ff' },
+];
+
+export function getTier(totalSpend) {
+  const spend = parseFloat(totalSpend || 0);
+  for (let i = TIERS.length - 1; i >= 0; i--) {
+    if (spend >= TIERS[i].min) return TIERS[i];
+  }
+  return TIERS[0];
+}
+
+export function getNextTier(totalSpend) {
+  const spend = parseFloat(totalSpend || 0);
+  for (let i = 0; i < TIERS.length; i++) {
+    if (spend < TIERS[i].max && TIERS[i].max !== Infinity) return TIERS[i + 1] || null;
+    if (spend <= TIERS[i].max) return TIERS[i + 1] || null;
+  }
+  return null;
+}
+
 export async function earnPoints({ customer, billAmount, staffName, outlet }) {
-  const pts = Math.floor(parseFloat(billAmount) * 0.05);
-  const prevSpend = parseFloat(customer.total_spend);
-  const newSpend = prevSpend + parseFloat(billAmount);
-  const milestoneHit = prevSpend < 750 && newSpend >= 750 && !customer.milestone_awarded;
-  const bonusPts = milestoneHit ? 200 : 0;
-  const newPoints = customer.points + pts + bonusPts;
+  const prevSpend = parseFloat(customer.total_spend || 0);
+  const newSpend  = prevSpend + parseFloat(billAmount);
+
+  // Earn rate based on NEW tier after this spend
+  const newTier  = getTier(newSpend);
+  const pts      = Math.floor(parseFloat(billAmount) * newTier.rate);
+
+  // Check tier upgrade bonuses
+  const prevTier = getTier(prevSpend);
+  let tierBonusPts = 0;
+  let tierUpgraded = false;
+
+  if (newTier.name !== prevTier.name) {
+    tierBonusPts = newTier.bonus;
+    tierUpgraded = true;
+  }
+
+  const newPoints = customer.points + pts + tierBonusPts;
 
   const updated = await updateCustomerPoints({
     id: customer.id,
     points: newPoints,
     totalSpend: newSpend,
-    milestoneAwarded: milestoneHit ? true : customer.milestone_awarded,
+    milestoneAwarded: customer.milestone_awarded,
   });
 
   await addTransaction({ customerId: customer.id, type: 'earn', amount: billAmount, pointsChange: pts, staffName, outlet });
-  if (milestoneHit) {
-    await addTransaction({ customerId: customer.id, type: 'bonus', amount: 0, pointsChange: 200, staffName: 'System', outlet: 'System' });
+
+  if (tierUpgraded && tierBonusPts > 0) {
+    await addTransaction({
+      customerId: customer.id, type: 'bonus', amount: 0,
+      pointsChange: tierBonusPts, staffName: 'System',
+      outlet: `Tier Upgrade: ${newTier.name}`
+    });
   }
 
-  return { updated, pts, bonusPts };
+  return { updated, pts, bonusPts: tierBonusPts, tierUpgraded, newTier, prevTier };
 }
 
 // REDEEM POINTS
