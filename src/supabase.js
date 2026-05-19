@@ -54,11 +54,13 @@ export async function getAllCustomers() {
   return data;
 }
 
-export async function createCustomer({ name, phone }) {
+export async function createCustomer({ name, phone, birthday }) {
   const id = 'C' + Math.random().toString(36).slice(2, 8).toUpperCase();
+  const insertData = { id, name, phone, points: 20, total_spend: 0, milestone_awarded: false };
+  if (birthday) insertData.birthday = birthday;
   const { data, error } = await supabase
     .from('customers')
-    .insert([{ id, name, phone, points: 20, total_spend: 0, milestone_awarded: false }])
+    .insert([insertData])
     .select()
     .single();
   if (error) throw error;
@@ -109,9 +111,11 @@ export async function earnPoints({ customer, billAmount, staffName, outlet }) {
 
   return {
     updated,
-    pts:          result.pts,
-    bonusPts:     result.bonusPts,
-    tierUpgraded: result.tierUpgraded,
+    pts:             result.pts,
+    bonusPts:        result.bonusPts,
+    birthdayBonus:   result.birthdayBonus || 0,
+    isBirthdayMonth: result.isBirthdayMonth || false,
+    tierUpgraded:    result.tierUpgraded,
     newTier,
     prevTier,
   };
