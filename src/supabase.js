@@ -10,8 +10,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // STAFF
 export async function getStaffByPin(pin) {
   const { data, error } = await supabase
-    .rpc('verify_staff_pin', { input_pin: pin });
-  if (error || !data || data.length === 0) return null;
+    .rpc('verify_staff_pin', { input_pin: String(pin) });
+  if (error) { console.error('PIN verify error:', error); return null; }
+  if (!data || data.length === 0) return null;
   return data[0];
 }
 
