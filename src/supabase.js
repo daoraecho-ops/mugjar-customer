@@ -8,9 +8,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ─── TIER SYSTEM ─────────────────────────────────────────────────────────────
 export const TIERS = [
   { name: 'Bronze',   icon: '🥉', min: 0,    rate: 0.05,  bonus: 0,    color: '#cd7f32' },
-  { name: 'Silver',   icon: '🥈', min: 751,  rate: 0.06,  bonus: 300,  color: '#a8a9ad' },
-  { name: 'Gold',     icon: '🥇', min: 2001, rate: 0.07,  bonus: 500,  color: '#d4a44c' },
-  { name: 'Platinum', icon: '💎', min: 4501, rate: 0.075, bonus: 800,  color: '#e5e4e2' },
+  { name: 'Silver',   icon: '🥈', min: 750,  rate: 0.06,  bonus: 300,  color: '#a8a9ad' },
+  { name: 'Gold',     icon: '🥇', min: 2000, rate: 0.07,  bonus: 500,  color: '#d4a44c' },
+  { name: 'Platinum', icon: '💎', min: 4500, rate: 0.075, bonus: 800,  color: '#e5e4e2' },
   { name: 'Diamond',  icon: '👑', min: 7500, rate: 0.08,  bonus: 1500, color: '#b9f2ff' },
 ];
 
