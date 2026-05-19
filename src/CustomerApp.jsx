@@ -227,6 +227,7 @@ export default function CustomerApp() {
   const [selOutlet, setSelOutlet] = useState(null);
   const [regName, setRegName]   = useState("");
   const [regPhone, setRegPhone] = useState("");
+  const [regBirthday, setRegBirthday] = useState("");
   const [loginPhone, setLoginPhone] = useState("");
   const [isChecking, setIsChecking] = useState(true);
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -311,7 +312,7 @@ export default function CustomerApp() {
     if (!regPhone.trim()) return showToast("Please enter your phone number", "error");
     setLoading(true);
     try {
-      const c = await createCustomer({ name: regName.trim(), phone: regPhone.trim() });
+      const c = await createCustomer({ name: regName.trim(), phone: regPhone.trim(), birthday: regBirthday || null });
       setMe(c);
       await refreshMe(c.id);
       localStorage.setItem("mugjar_customer_id", c.id);
@@ -401,7 +402,12 @@ export default function CustomerApp() {
         </div>
         <div className="input-group">
           <label className="input-label">Mobile Number</label>
-          <input className="input" placeholder="e.g. 012-3456789" type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} onKeyDown={e => e.key === "Enter" && handleRegister()} />
+          <input className="input" placeholder="e.g. 012-3456789" type="tel" value={regPhone} onChange={e => setRegPhone(e.target.value)} />
+        </div>
+        <div className="input-group">
+          <label className="input-label">Birthday 🎂 <span style={{ color:"var(--muted)", fontWeight:400, textTransform:"none", letterSpacing:0, fontSize:11 }}>(optional — get 2x points in your birthday month!)</span></label>
+          <input className="input" type="date" value={regBirthday} onChange={e => setRegBirthday(e.target.value)}
+            style={{ colorScheme:"dark" }}/>
         </div>
         <div className="card" style={{ background: "rgba(200,66,10,0.06)", border: "1px solid rgba(200,66,10,0.18)", marginBottom: 20 }}>
           <div style={{ fontSize: 13, color: "var(--flame)", fontWeight: 700, marginBottom: 6 }}>🎁 What you get</div>
@@ -409,7 +415,8 @@ export default function CustomerApp() {
             ✓ 20 bonus points (RM1.00)<br />
             ✓ 5 pts per RM100 spent<br />
             ✓ Redeem at DAORAE & JOJO SIKDANG<br />
-            ✓ RM750 milestone → 200 bonus points
+            ✓ RM750 milestone → 200 bonus points<br />
+            ✓ 🎂 2x points every birthday month!
           </div>
         </div>
         <button className="btn btn-primary" onClick={handleRegister} disabled={loading}>
@@ -494,6 +501,32 @@ export default function CustomerApp() {
               </div>
             </div>
           )}
+
+          {/* Birthday Month Banner */}
+          {me.birthday && (() => {
+            const bMonth = new Date(me.birthday).getMonth();
+            const nowMonth = new Date().getMonth();
+            const isBirthdayMonth = bMonth === nowMonth;
+            if (!isBirthdayMonth) return null;
+            return (
+              <div style={{
+                background: "linear-gradient(135deg,#4a0080,#7b00d4)",
+                border: "1px solid rgba(180,100,255,0.4)",
+                borderRadius: 14, padding: "16px", marginBottom: 12,
+                textAlign: "center",
+                boxShadow: "0 4px 24px rgba(123,0,212,0.3)",
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 6 }}>🎂</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "white", marginBottom: 4 }}>
+                  Happy Birthday, {me.name.split(" ")[0]}! 🎉
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", lineHeight: 1.6 }}>
+                  You're earning <strong style={{ color: "#ffd700" }}>2x points</strong> on every visit this month!<br/>
+                  Come celebrate with us at DAORAE or JOJO SIKDANG 🔥
+                </div>
+              </div>
+            );
+          })()}
           <div className="card-glow" style={{ animation: "ember 4s ease-in-out infinite", textAlign: "center" }}>
             {/* Tier Badge */}
             {(() => {
