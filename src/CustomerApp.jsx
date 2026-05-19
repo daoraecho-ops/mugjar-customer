@@ -629,7 +629,7 @@ export default function CustomerApp() {
                       {isCurrentTier && <span style={{ fontSize:9, background:"rgba(255,255,255,0.08)", borderRadius:10, padding:"2px 6px", color:"var(--muted)" }}>YOU</span>}
                     </div>
                     <div style={{ textAlign:"right" }}>
-                      <span style={{ fontSize:13, fontWeight:700, color:t.color }}>{t.rate * 100}%</span>
+                      <span style={{ fontSize:13, fontWeight:700, color:t.color }}>{(t.rate * 100).toFixed(1).replace('.0', '')}%</span>
                       {t.bonus > 0 && <span style={{ fontSize:10, color:"#6ecf80", marginLeft:6 }}>+{t.bonus} pts on unlock</span>}
                     </div>
                   </div>
